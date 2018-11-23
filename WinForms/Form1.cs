@@ -25,7 +25,7 @@ namespace WinForms
         Teacher user2;
         Student user1;
         private int ind;
-        string ContextStr = null;
+        private string contextStr = null;
 
         private void LogBtn_Click(object sender, EventArgs e)
         {
@@ -132,7 +132,68 @@ namespace WinForms
 
         private void UpdateBtn_Click(object sender, EventArgs e)
         {
+            DataGridViewComboBoxCell cell_CB = InfoDataGridView.Rows[0].Cells[0] as DataGridViewComboBoxCell;
+            if (cell_CB.EditedFormattedValue.ToString().Equals("tbMarks"))
+            {
+                InfoDataGridView.Columns.Add("MarkId", "MarkId");
+                InfoDataGridView.Columns[1].Width = 50;
+                InfoDataGridView.Columns.Add("Student", "Student");
+                InfoDataGridView.Columns.Add("Value", "Value");
+                InfoDataGridView.Columns[3].Width = 50;
+                InfoDataGridView.Columns.Add("Subject", "Subject");
+                InfoDataGridView.Columns.Add("Teacher", "Teacher");
+                var stud = (from m in Unit.MarksRepository.AllItems
+                            join s in Unit.StudentsRepository.AllItems
+                            on m.Student.Id equals s.Id
+                            join ts in Unit.TeachSubjRepository.AllItems
+                            on m.TeachSubj.Id equals ts.Id
+                            join teachers in Unit.TeachersRepository.AllItems
+                            on ts.TeacherId equals teachers.Id
+                            join ss in Unit.SubjectsRepository.AllItems
+                            on ts.SubjId equals ss.Id
+                            select new
+                            {
+                                m.Id,
+                                sId=s.Id,
+                                s.LastName,
+                                m.StudentsMark,
+                                Teacher = teachers.LastName,
+                                ss.Name
+                            }).ToList();
+                int i = 1;
+                foreach (var mark in stud)
+                {
+                    DataGridViewRow row = InfoDataGridView.Rows[i];
+                    if (row.Cells[1].Value.ToString() == mark.Id.ToString())
+                    {
+                        bool flagUpdate = false;
+                        if (row.Cells[2].Value.ToString() != mark.LastName)
+                            flagUpdate = true;
+                        if (row.Cells[3].Value.ToString()!= mark.StudentsMark.ToString())
+                            flagUpdate = true;
+                        if (row.Cells[4].Value.ToString() != mark.Name)
+                            flagUpdate = true;
+                        if (row.Cells[5].Value.ToString() != mark.Teacher)
+                            flagUpdate = true;
+                        if (flagUpdate)
+                            Update(mark.Id, new int[] { 
+                                Int32.Parse(row.Cells[3].Value.ToString()) });
+                    }
+                    else
+                        i--;
+                    i++;
+                }
+            }
+        }
 
+        private void Update(int id, int[]args)
+        {
+            if (true)
+            {
+                Mark newitem = Unit.MarksRepository.GetItem(id);
+                newitem.StudentsMark = args[0];
+                Unit.MarksRepository.ChangeItem(newitem);
+            }
         }
 
         private void ComboCell_work(object sender, EventArgs e)
@@ -476,9 +537,9 @@ namespace WinForms
             if (flag && ind == 0)
             {
                 string str = InfoDataGridView.CurrentCell.EditedFormattedValue.ToString();
-                if (ContextStr != null && ContextStr != str)
+                if (contextStr != null && contextStr != str)
                     UpdateBtn.Visible = true;
-                ContextStr = str;
+                contextStr = str;
             }
         }
     }
