@@ -25,6 +25,7 @@ namespace WinForms
         Teacher user2;
         Student user1;
         private int ind;
+        string ContextStr = null;
 
         private void LogBtn_Click(object sender, EventArgs e)
         {
@@ -172,34 +173,37 @@ namespace WinForms
 
         private void AdminUX(DataGridViewComboBoxCell cell_CB)
         {
-            int id = user1.Id;
-            InfoDataGridView.Columns.Add("Mark", "Mark");
-            InfoDataGridView.Columns.Add("Subj", "Subj");
-            InfoDataGridView.Columns.Add("Teacher", "Teacher");
-
-            var stud = (from m in Unit.MarksRepository.AllItems
-                        join s in Unit.StudentsRepository.AllItems
-                        on m.Student.Id equals s.Id
-                        join ts in Unit.TeachSubjRepository.AllItems
-                        on m.TeachSubj.Id equals ts.Id
-                        join teachers in Unit.TeachersRepository.AllItems
-                        on ts.TeacherId equals teachers.Id
-                        join ss in Unit.SubjectsRepository.AllItems
-                        on ts.SubjId equals ss.Id
-                        select new
-                        {
-                            s.Id,
-                            m.StudentsMark,
-                            teachers.LastName,
-                            ss.Name
-                        }).ToList();
-
-            foreach (var mark in stud)
-                if (mark.Id == id)
-                    InfoDataGridView.Rows.Add("", mark.StudentsMark, mark.Name, mark.LastName);
             if (cell_CB.EditedFormattedValue.ToString().Equals("tbMarks"))
-                foreach (var mark in Unit.MarksRepository.AllItems)
-                    InfoDataGridView.Rows.Add("", mark.Id, mark.Student, mark.StudentsMark, mark.TeachSubj);
+            {
+                InfoDataGridView.Columns.Add("MarkId", "MarkId");
+                InfoDataGridView.Columns[1].Width = 50;
+                InfoDataGridView.Columns.Add("Student", "Student");
+                InfoDataGridView.Columns.Add("Value", "Value");
+                InfoDataGridView.Columns[3].Width = 50;
+                InfoDataGridView.Columns.Add("Subject", "Subject");
+                InfoDataGridView.Columns.Add("Teacher", "Teacher");
+                var stud = (from m in Unit.MarksRepository.AllItems
+                            join s in Unit.StudentsRepository.AllItems
+                            on m.Student.Id equals s.Id
+                            join ts in Unit.TeachSubjRepository.AllItems
+                            on m.TeachSubj.Id equals ts.Id
+                            join teachers in Unit.TeachersRepository.AllItems
+                            on ts.TeacherId equals teachers.Id
+                            join ss in Unit.SubjectsRepository.AllItems
+                            on ts.SubjId equals ss.Id
+                            select new
+                            {
+                                m.Id,
+                                s.LastName,
+                                m.StudentsMark,
+                                Teacher = teachers.LastName,
+                                ss.Name
+                            }).ToList();
+
+                foreach (var mark in stud)
+                    InfoDataGridView.Rows.Add("", mark.Id, mark.LastName, 
+                        mark.StudentsMark, mark.Name, mark.Teacher);
+            }
         }
 
         private void TeacherUX(DataGridViewComboBoxCell cell_CB)
@@ -452,6 +456,7 @@ namespace WinForms
 
         private void InfoDataGridView_EditingControlShowing(object sender, DataGridViewEditingControlShowingEventArgs e)
         {
+            bool flag = true;
             if (InfoDataGridView.CurrentCell.ColumnIndex == 0)
             {
                 try
@@ -463,7 +468,17 @@ namespace WinForms
                         cellCombo.SelectionChangeCommitted += new EventHandler(ComboCell_work);
                     }
                 }
-                catch { }
+                catch {
+                    flag = false;
+                }
+            }
+            else flag = false;
+            if (flag && ind == 0)
+            {
+                string str = InfoDataGridView.CurrentCell.EditedFormattedValue.ToString();
+                if (ContextStr != null && ContextStr != str)
+                    UpdateBtn.Visible = true;
+                ContextStr = str;
             }
         }
     }
